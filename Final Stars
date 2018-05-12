@@ -1,0 +1,678 @@
+from astropy.table import vstack, hstack, Table
+from astropy.io import ascii, fits
+import numpy as np
+import matplotlib.pyplot as plt
+
+#read in Draco table
+DR = Table.read('DR14_Draco.fits')
+Target = np.array(DR['APOGEE2_TARGET1'])
+
+#Split bitmask 20 and 21 - confirmed and candidate members
+Conf = DR[np.where((DR['APOGEE2_TARGET1'] & 2**20) != 0)]
+Cand = DR[np.where((DR['APOGEE2_TARGET1'] & 2**21) != 0)]
+
+index_Draco_TF_memb = np.logical_or(((DR['APOGEE2_TARGET1'] & 2**21) != 0),((DR['APOGEE2_TARGET1'] & 2**20) != 0))
+DR_Memb = DR[index_Draco_TF_memb]
+
+Chi = 5 * np.median(DR['ASPCAP_CHI2'])
+DR_Memb = DR[np.where(DR_Memb['ASPCAP_CHI2'] < Chi)]
+
+DR_Memb = DR_Memb[(DR_Memb['VHELIO_AVG'] > -311.5) & (DR_Memb['VHELIO_AVG'] < -271.5)]
+
+Conf_Memb = Conf[(Conf['VHELIO_AVG'] > -311.5) & (Conf['VHELIO_AVG'] < -271.5)]
+Cand_Memb = Cand[(Cand['VHELIO_AVG'] > -311.5) & (Cand['VHELIO_AVG'] < -271.5)]
+
+DR_Memb = DR_Memb[np.where(DR_Memb['STARFLAG'] != 0)]
+
+DR_Memb = DR_Memb[np.where(DR_Memb['FE_H'] != -9999.0)]
+
+DR_Memb = DR_Memb[(DR_Memb['STARFLAG'] & 2**4) != 0]
+
+FE_H_index = (DR_Memb['FE_H'] < -1.62) & (DR_Memb['FE_H'] > -2.40)
+DR_Memb = DR_Memb[FE_H_index]
+
+DRM = DR_Memb
+
+
+
+
+#Alpha Elements: O, Mg, Si, S, Ca, Ti
+# FE Peak: 22-30: Ti, V, Cr, Mn, Fe, Co, Ni, Cu, Zn
+#Light elements: below FE Peak, not alpha: H, He, Li, Be, B, C, N, Ne, Na, Al, P
+#Heavy: Ge, Y, Rb, Nd, 
+
+
+#assign element values 
+
+Conf_M_H = DRM['M_H']
+Conf_FE_H = DRM['FE_H']
+
+#Alpha Elements (7 + 1)
+O = DRM['O_FE']
+Mg = DRM['MG_FE']
+Si = DRM['SI_FE']
+S = DRM['S_FE']
+Ca = DRM['CA_FE']
+Ti = DRM['TI_FE']
+TiII = DRM['TIII_FE']
+Alpha = DRM['ALPHA_M']
+
+#Fe Peak (6)
+V = DRM['V_FE']
+Cr = DRM['CR_FE']
+Mn = DRM['MN_FE']
+Co = DRM['CO_FE']
+Ni = DRM['NI_FE']
+Cu = DRM['CU_FE']
+
+
+#Light Elements (7)
+C = DRM['C_FE']
+CI = DRM['CI_FE']
+N = DRM['N_FE']
+Na = DRM['NA_FE']
+Al = DRM['AL_FE']
+P = DRM['P_FE']
+K = DRM['K_FE']
+
+
+#Heavy Elements (4)
+Ge = DRM['GE_FE']
+Rb = DRM['RB_FE']
+Y = DRM['Y_FE']
+Nd = DRM['ND_FE']
+
+#create list of Evan's stars (in future, read in through csv or list - easier to manipulate)
+e1 = '2M17193545+5758465'
+e2 = '2M17200396+5759082'
+e3 = '2M17194767+5748365'
+e4 = '2M17194472+5757369'
+e5 = '2M17215819+5756042'
+e6 = '2M17194183+5752192'
+e7 = '2M17203739+5759125'
+e8 = '2M17203417+5753319'
+e9 = '2M17191081+5759173'
+e10 = '2M17200577+5756234'
+e11 = '2M17215694+5759339'
+e12 = '2M17195888+5757208'
+e13 = '2M17221363+5753065'
+e14 = '2M17191342+5752334'
+e15 = '2M17205204+5759477'
+e16 = '2M17214368+5757126'
+e17 = '2M17201351+5751591'
+
+E1 = DR[np.where(DR['APOGEE_ID'] == e1)]
+E2 = DR[np.where(DR['APOGEE_ID'] == e2)]
+E3 = DR[np.where(DR['APOGEE_ID'] == e3)]
+E4 = DR[np.where(DR['APOGEE_ID'] == e4)]
+E5 = DR[np.where(DR['APOGEE_ID'] == e5)]
+E6 = DR[np.where(DR['APOGEE_ID'] == e6)]
+E7 = DR[np.where(DR['APOGEE_ID'] == e7)]
+E8 = DR[np.where(DR['APOGEE_ID'] == e8)]
+E9 = DR[np.where(DR['APOGEE_ID'] == e9)]
+E10 = DR[np.where(DR['APOGEE_ID'] == e10)]
+E11 = DR[np.where(DR['APOGEE_ID'] == e11)]
+E12 = DR[np.where(DR['APOGEE_ID'] == e12)]
+E13 = DR[np.where(DR['APOGEE_ID'] == e13)]
+E14 = DR[np.where(DR['APOGEE_ID'] == e14)]
+E15 = DR[np.where(DR['APOGEE_ID'] == e15)]
+E16 = DR[np.where(DR['APOGEE_ID'] == e16)]
+E17 = DR[np.where(DR['APOGEE_ID'] == e17)]
+
+
+#Evan Star Group (including Gold Star Members)
+EVN = vstack([E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,E15,E16,E17])
+
+#Evan Star Group (without GS Members)
+EVN_only = vstack([E12,E2,E5,E16,E8,E17,E11])
+
+Evan_M_H = EVN['M_H']
+Evan_FE_H = EVN['FE_H']
+
+#assign metallicity values 
+#Alpha Elements (7)
+E_O = EVN['O_FE']
+E_Mg = EVN['MG_FE']
+E_Si = EVN['SI_FE']
+E_S = EVN['S_FE']
+E_Ca = EVN['CA_FE']
+E_Ti = EVN['TI_FE']
+E_TiII = EVN['TIII_FE']
+E_Alpha = EVN['ALPHA_M']
+
+#Fe Peak (6)
+E_V = EVN['V_FE']
+E_Cr = EVN['CR_FE']
+E_Mn = EVN['MN_FE']
+E_Co = EVN['CO_FE']
+E_Ni = EVN['NI_FE']
+E_Cu = EVN['CU_FE']
+
+
+#Light Elements (7)
+E_C = EVN['C_FE']
+E_CI = EVN['CI_FE']
+E_N = EVN['N_FE']
+E_Na = EVN['NA_FE']
+E_Al = EVN['AL_FE']
+E_P = EVN['P_FE']
+E_K = EVN['K_FE']
+
+
+#Heavy Elements (4)
+E_Ge = EVN['GE_FE']
+E_Rb = EVN['RB_FE']
+E_Y = EVN['Y_FE']
+E_Nd = EVN['ND_FE']
+
+#assign ID's for nominees and create array for value generation
+idx1 = '2M17181038+5752090'
+idx2 = '2M17191752+5801070'
+idx3 = '2M17195181+5759177'
+idx4 = '2M17200068+5753464'
+idx5 = '2M17203282+5751438'
+idx6 = '2M17193600+5756289'
+idx7 = '2M17204022+5757329'
+idx8 = '2M17204181+5800248'
+idx9 = '2M17204365+5748441'
+idx10 = '2M17220376+5741287'
+idx11 = '2M17173857+5804389'
+idx12 = '2M17165600+5758362'
+idx13 = '2M17172225+5807254'
+idx14 = '2M17185759+5754142'
+idx15 = '2M17185773+5755463'
+idx16 = '2M17213025+5750163'
+
+
+S1 = DR[np.where(DR['APOGEE_ID'] == idx1)]
+S2 = DR[np.where(DR['APOGEE_ID'] == idx2)]
+S3 = DR[np.where(DR['APOGEE_ID'] == idx3)]
+S4 = DR[np.where(DR['APOGEE_ID'] == idx4)]
+S5 = DR[np.where(DR['APOGEE_ID'] == idx5)]
+S6 = DR[np.where(DR['APOGEE_ID'] == idx6)]
+S7 = DR[np.where(DR['APOGEE_ID'] == idx7)]
+S8 = DR[np.where(DR['APOGEE_ID'] == idx8)]
+S9 = DR[np.where(DR['APOGEE_ID'] == idx9)]
+S10 = DR[np.where(DR['APOGEE_ID'] == idx10)]
+S11 = DR[np.where(DR['APOGEE_ID'] == idx11)]
+S12 = DR[np.where(DR['APOGEE_ID'] == idx12)]
+S13 = DR[np.where(DR['APOGEE_ID'] == idx13)]
+S14 = DR[np.where(DR['APOGEE_ID'] == idx14)]
+S15 = DR[np.where(DR['APOGEE_ID'] == idx15)]
+S16 = DR[np.where(DR['APOGEE_ID'] == idx16)]
+
+
+Noms = vstack([S1,S2,S3,S4,S5,S6, S7, S8, S9, S10, S11, S12, S13, S14, S15, S16])
+
+Noms_M_H = Noms['M_H']
+Noms_FE_H = Noms['FE_H']
+
+#Alpha Elements (7)
+NO_O = Noms['O_FE']
+NO_Mg = Noms['MG_FE']
+NO_Si = Noms['SI_FE']
+NO_S = Noms['S_FE']
+NO_Ca = Noms['CA_FE']
+NO_Ti = Noms['TI_FE']
+NO_TiII = Noms['TIII_FE']
+NO_Alpha = Noms['ALPHA_M']
+
+#Fe Peak (6)
+NO_V = Noms['V_FE']
+NO_Cr = Noms['CR_FE']
+NO_Mn = Noms['MN_FE']
+NO_Co = Noms['CO_FE']
+NO_Ni = Noms['NI_FE']
+NO_Cu = Noms['CU_FE']
+
+
+#Light Elements (7)
+NO_C = Noms['C_FE']
+NO_CI = Noms['CI_FE']
+NO_N = Noms['N_FE']
+NO_Na = Noms['NA_FE']
+NO_Al = Noms['AL_FE']
+NO_P = Noms['P_FE']
+NO_K = Noms['K_FE']
+
+
+#Heavy Elements (4)
+NO_Ge = Noms['GE_FE']
+NO_Rb = Noms['RB_FE']
+NO_Y = Noms['Y_FE']
+NO_Nd = Noms['ND_FE']
+
+
+
+
+#Light Elements Subplots
+fig, ax = plt.subplots(3,3)
+fig.tight_layout()
+ax[0,0].scatter(Evan_FE_H, E_C , s=20, color='b', marker = 's', alpha=0.5, label='Evan Member')
+ax[0,0].scatter(Conf_FE_H, C , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[0,0].scatter(Noms_FE_H, NO_C , s=20, color='r', marker = '^',  alpha=0.5, label='Nominated Member')
+ax[0,0].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (calibrated)', ylabel='[C/Fe] (calibrated)')
+ax[0,1].scatter(Evan_FE_H, E_CI , s=20, color='b', marker = 's', alpha=0.5, label='Evan Member')
+ax[0,1].scatter(Conf_FE_H, CI , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[0,1].scatter(Noms_FE_H, NO_CI , s=20, color='r', marker = '^', alpha=0.5, label='Nominated Member')
+ax[0,1].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (calibrated)', ylabel='[CI/Fe] (calibrated)')
+ax[0,2].scatter(Evan_FE_H, E_N , s=20, color='b', marker = 's',  alpha=0.5, label='Evan Member')
+ax[0,2].scatter(Conf_FE_H, N , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[0,2].scatter(Noms_FE_H, NO_N , s=20, color='r', marker = '^',  alpha=0.5, label='Nominated Member')
+ax[0,2].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (calibrated)', ylabel='[N/Fe] (calibrated)')
+ax[1,0].scatter(Evan_FE_H, E_Na , s=20, color='b',  marker = 's', alpha=0.5, label='Evan Member')
+ax[1,0].scatter(Conf_FE_H, Na , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[1,0].scatter(Noms_FE_H, NO_Na , s=20, color='r', marker = '^',  alpha=0.5, label='Nominated Member')
+ax[1,0].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (calibrated)', ylabel='[Na/Fe] (calibrated)')
+ax[1,1].scatter(Evan_FE_H, E_Al , s=20, color='b',  marker = 's', alpha=0.5, label='Evan Member')
+ax[1,1].scatter(Conf_FE_H, Al , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[1,1].scatter(Noms_FE_H, NO_Al , s=20, color='r', marker = '^',  alpha=0.5, label='Nominated Member')
+ax[1,1].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (calibrated)', ylabel='[Al/Fe] (calibrated)')
+ax[1,2].scatter(Evan_FE_H, E_P , s=20, color='b', marker = 's',  alpha=0.5, label='Evan Member')
+ax[1,2].scatter(Conf_FE_H, P , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[1,2].scatter(Noms_FE_H, NO_P , s=20, color='r', marker = '^',  alpha=0.5, label='Nominated Member')
+ax[1,2].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (calibrated)', ylabel='[P/Fe] (calibrated)')
+ax[2,0].scatter(Evan_FE_H, E_K , s=20, color='b', marker = 's',  alpha=0.5, label='Evan Member')
+ax[2,0].scatter(Conf_FE_H, K , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[2,0].scatter(Noms_FE_H, NO_K , s=20, color='r', marker = '^',  alpha=0.5, label='Nominated Member')
+ax[2,0].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (calibrated)', ylabel='[K/Fe] (calibrated)')
+plt.legend(loc='upper right')
+plt.savefig('Cal Light Elements.pdf')
+
+#alpha elements subplots
+fig, ax = plt.subplots(3,3)
+fig.tight_layout()
+ax[0,0].scatter(Evan_FE_H, E_O , s=20, color='b', marker = 's', alpha=0.5, label='Evan Member')
+ax[0,0].scatter(Conf_FE_H, O , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[0,0].scatter(Noms_FE_H, NO_O , s=20, color='r', marker = '^',  alpha=0.5, label='Nominated Member')
+ax[0,0].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (calibrated)', ylabel='[O/Fe] (calibrated)')
+ax[0,1].scatter(Evan_FE_H, E_Mg , s=20, color='b', marker = 's', alpha=0.5, label='Evan Member')
+ax[0,1].scatter(Conf_FE_H, Mg , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[0,1].scatter(Noms_FE_H, NO_Mg , s=20, color='r', marker = '^', alpha=0.5, label='Nominated Member')
+ax[0,1].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (calibrated)', ylabel='[Mg/Fe] (calibrated)')
+ax[0,2].scatter(Evan_FE_H, E_Si , s=20, color='b', marker = 's',  alpha=0.5, label='Evan Member')
+ax[0,2].scatter(Conf_FE_H, Si , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[0,2].scatter(Noms_FE_H, NO_Si , s=20, color='r', marker = '^',  alpha=0.5, label='Nominated Member')
+ax[0,2].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (calibrated)', ylabel='[Si/Fe] (calibrated)')
+ax[1,0].scatter(Evan_FE_H, E_S , s=20, color='b',  marker = 's', alpha=0.5, label='Evan Member')
+ax[1,0].scatter(Conf_FE_H, S , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[1,0].scatter(Noms_FE_H, NO_S , s=20, color='r', marker = '^',  alpha=0.5, label='Nominated Member')
+ax[1,0].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (calibrated)', ylabel='[S/Fe] (calibrated)')
+ax[1,1].scatter(Evan_FE_H, E_Ca , s=20, color='b',  marker = 's', alpha=0.5, label='Evan Member')
+ax[1,1].scatter(Conf_FE_H, Ca , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[1,1].scatter(Noms_FE_H, NO_Ca , s=20, color='r', marker = '^',  alpha=0.5, label='Nominated Member')
+ax[1,1].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (calibrated)', ylabel='[Ca/Fe] (calibrated)')
+ax[1,2].scatter(Evan_FE_H, E_Ti , s=20, color='b', marker = 's',  alpha=0.5, label='Evan Member')
+ax[1,2].scatter(Conf_FE_H, Ti , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[1,2].scatter(Noms_FE_H, NO_Ti , s=20, color='r', marker = '^',  alpha=0.5, label='Nominated Member')
+ax[1,2].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (calibrated)', ylabel='[Ti/Fe] (calibrated)')
+ax[2,0].scatter(Evan_FE_H, E_TiII , s=20, color='b', marker = 's',  alpha=0.5, label='Evan Member')
+ax[2,0].scatter(Conf_FE_H, TiII , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[2,0].scatter(Noms_FE_H, NO_TiII , s=20, color='r', marker = '^',  alpha=0.5, label='Nominated Member')
+ax[2,0].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (calibrated)', ylabel='[TiII/Fe] (calibrated)')
+ax[2,2].scatter(Evan_FE_H, E_Alpha , s=20, color='b', marker = 's',  alpha=0.5, label='Evan Member')
+ax[2,2].scatter(Conf_FE_H, Alpha , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[2,2].scatter(Noms_FE_H, NO_Alpha , s=20, color='r', marker = '^',  alpha=0.5, label='Nominated Member')
+ax[2,2].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (calibrated)', ylabel='[Alpha/M] (calibrated)')
+plt.savefig('Cal Alpha Elements.pdf')
+
+#Fe peak element subplots
+fig, ax = plt.subplots(2,3)
+fig.tight_layout()
+ax[0,0].scatter(Evan_FE_H, E_V , s=20, color='b', marker = 's', alpha=0.5, label='Evan Member')
+ax[0,0].scatter(Conf_FE_H, V , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[0,0].scatter(Noms_FE_H, NO_V , s=20, color='r', marker = '^',  alpha=0.5, label='Nominated Member')
+ax[0,0].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (calibrated)', ylabel='[V/Fe] (calibrated)')
+ax[0,1].scatter(Evan_FE_H, E_Cr , s=20, color='b', marker = 's', alpha=0.5, label='Evan Member')
+ax[0,1].scatter(Conf_FE_H, Cr , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[0,1].scatter(Noms_FE_H, NO_Cr , s=20, color='r', marker = '^', alpha=0.5, label='Nominated Member')
+ax[0,1].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (calibrated)', ylabel='[Cr/Fe] (calibrated)')
+ax[0,2].scatter(Evan_FE_H, E_Mn , s=20, color='b', marker = 's',  alpha=0.5, label='Evan Member')
+ax[0,2].scatter(Conf_FE_H, Mn , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[0,2].scatter(Noms_FE_H, NO_Mn , s=20, color='r', marker = '^',  alpha=0.5, label='Nominated Member')
+ax[0,2].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (calibrated)', ylabel='[Mn/Fe] (calibrated)')
+ax[1,0].scatter(Evan_FE_H, E_Co , s=20, color='b',  marker = 's', alpha=0.5, label='Evan Member')
+ax[1,0].scatter(Conf_FE_H, Co , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[1,0].scatter(Noms_FE_H, NO_Co , s=20, color='r', marker = '^',  alpha=0.5, label='Nominated Member')
+ax[1,0].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (calibrated)', ylabel='[Co/Fe] (calibrated)')
+ax[1,1].scatter(Evan_FE_H, E_Ni , s=20, color='b',  marker = 's', alpha=0.5, label='Evan Member')
+ax[1,1].scatter(Conf_FE_H, Ni , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[1,1].scatter(Noms_FE_H, NO_Ni , s=20, color='r', marker = '^',  alpha=0.5, label='Nominated Member')
+ax[1,1].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (calibrated)', ylabel='[Ni/Fe] (calibrated)')
+ax[1,2].scatter(Evan_FE_H, E_Cu , s=20, color='b', marker = 's',  alpha=0.5, label='Evan Member')
+ax[1,2].scatter(Conf_FE_H, Cu , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[1,2].scatter(Noms_FE_H, NO_Cu , s=20, color='r', marker = '^',  alpha=0.5, label='Nominated Member')
+ax[1,2].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (calibrated)', ylabel='[Cu/Fe] (calibrated)')
+plt.savefig('Cal Fe Peak Elements.pdf')
+
+
+
+
+#UNCALIBRATED PLOTS
+
+#read in master file to find HDU3 header
+dr_3 = Table.read('allStar-l31c.2.fits', hdu=3)
+dr_3[0]['PARAM_SYMBOL']
+dr_3[0]['ELEM_SYMBOL']
+dr_3[0]['ELEM_VALUE']
+
+
+#Confirmed Stars
+
+FE_H = DRM['FELEM'][:,17]
+M_H = DRM['FPARAM'][:,3]
+M_FE = M_H - FE_H
+
+#Alpha Elements (7+1)
+O_M = DRM['FELEM'][:,3]
+O = O_M + M_FE
+Mg_M = DRM['FELEM'][:,5]
+Mg = Mg_M + M_FE
+Si_M = DRM['FELEM'][:,7]
+Si = Si_M + M_FE
+S_M = DRM['FELEM'][:,9]
+S = S_M + M_FE
+Ca_M = DRM['FELEM'][:,11]
+Ca = C_M + M_FE
+Ti_M = DRM['FELEM'][:,12]
+Ti = Ti_M + M_FE
+TiII_M = DRM['FELEM'][:,13]
+TiII = TiII_M + M_FE
+Alpha_M = DRM['FPARAM'][:,6]
+
+#Fe Peak (6)
+V_H = DRM['FELEM'][:,14]
+V = V_H - FE_H
+Cr_H = DRM['FELEM'][:,15]
+Cr = Cr_H - FE_H
+Mn_H = DRM['FELEM'][:,16]
+Mn = Mn_H - FE_H
+Co_H = DRM['FELEM'][:,18]
+Co = Co_H - FE_H
+Ni_H = DRM['FELEM'][:,19]
+Ni = Ni_H - FE_H
+Cu_H = DRM['FELEM'][:,20]
+Cu = Cu_H - FE_H
+
+#Light Elements (7)
+
+C_M = DRM['FELEM'][:,0]
+C = C_M + M_FE
+CI_M = DRM['FELEM'][:,1]
+CI = CI_M + M_FE
+N_M = DRM['FELEM'][:,2]
+N = N_M + M_FE
+Na_H = DRM['FELEM'][:,4]
+Na = Na_H - FE_H
+Al_H = DRM['FELEM'][:,6]
+Al = Al_H - FE_H
+P_M = DRM['FELEM'][:,8]
+P = P_M + M_FE
+K_H = DRM['FELEM'][:,10]
+K = K_H - FE_H
+
+#Heavy Elements
+Ge_H = DRM['FELEM'][:,21]
+Ge = Ge_H - FE_H
+Ce_H = DRM['FELEM'][:,22]
+Ce = Ce_H - FE_H
+Rb_H = DRM['FELEM'][:,23]
+Rb = Rb_H - FE_H
+Y_H = DRM['FELEM'][:,24]
+Y = Y_H - FE_H
+Nd_H = DRM['FELEM'][:,25]
+Nd = Nd_H - FE_H
+
+
+#Evan Stars
+
+E_FE_H = EVN['FELEM'][:,17]
+E_M_H = EVN['FPARAM'][:,3]
+E_M_FE = E_M_H - E_FE_H
+
+#Alpha Elemens (7+1)
+E_O_M = DRM['FELEM'][:,3]
+E_O = E_O_M +E_M_FE
+E_Mg_M = DRM['FELEM'][:,5]
+E_Mg = E_Mg_M +E_M_FE
+E_Si_M = DRM['FELEM'][:,7]
+E_Si = E_Si_M + E_M_FE
+E_S_M = DRM['FELEM'][:,9]
+E_S = E_S_M + E_M_FE
+E_Ca_M = DRM['FELEM'][:,11]
+E_Ca = E_Ca_M + E_M_FE
+E_Ti_M = DRM['FELEM'][:,12]
+E_Ti = E_Ti_M + E_M_FE
+E_TiII_M = DRM['FELEM'][:,13]
+E_TiII = E_TiII_M + E_M_FE
+E_Alpha_M = EVN['FPARAM'][:,6]
+
+#Fe Peak (6)
+E_V_H = DRM['FELEM'][:,14]
+E_V = E_V_H - E_FE_H
+E_Cr_H = DRM['FELEM'][:,15]
+E_Cr = E_Cr_H - E_FE_H
+E_Mn_H = DRM['FELEM'][:,16]
+E_Mn = E_Mn_H - E_FE_H
+E_Co_H = DRM['FELEM'][:,18]
+E_Co = E_Co_H - E_FE_H
+E_Ni_H = DRM['FELEM'][:,19]
+E_Ni = E_Ni_H - E_FE_H
+E_Cu_H = DRM['FELEM'][:,20]
+E_Cu = E_Cu_H - E_FE_H
+
+#Light Elements (7)
+
+E_C_M = DRM['FELEM'][:,0]
+E_C = E_C_M + E_M_FE
+E_CI_M = DRM['FELEM'][:,1]
+E_CI = E_CI_M + E_M_FE
+E_N_M = DRM['FELEM'][:,2]
+E_N = E_N_M + E_M_FE
+E_Na_H = DRM['FELEM'][:,4]
+E_Na = E_Na_H - E_FE_H
+E_Al_H = DRM['FELEM'][:,6]
+E_Al = E_Al_H - E_FE_H
+E_P_M = DRM['FELEM'][:,8]
+E_P = E_P_M + E_M_FE
+E_K_H = DRM['FELEM'][:,10]
+E_K = E_K_H - E_FE_H
+
+#Heavy Elements
+E_Ge_H = DRM['FELEM'][:,21]
+E_Ge = E_Ge_H - E_FE_H
+E_Ce_H = DRM['FELEM'][:,22]
+E_Ce = E_Ce_H - E_FE_H
+E_Rb_H = DRM['FELEM'][:,23]
+E_Rb = E_Rb_H - E_FE_H
+E_Y_H = DRM['FELEM'][:,24]
+E_Y = E_Y_H - E_FE_H
+E_Nd_H = DRM['FELEM'][:,25]
+E_Nd = E_Nd_H - E_FE_H
+
+
+#Nominees
+
+NO_FE_H = Noms['FELEM'][:,17]
+NO_M_H = Noms['FPARAM'][:,3]
+NO_M_FE = NO_M_H - NO_FE_H
+
+#Alpha Elemens (7+1)
+NO_O_M = Noms['FELEM'][:,3]
+NO_O = NO_O_M + NO_M_FE
+NO_Mg_M = Noms['FELEM'][:,5]
+NO_Mg = NO_Mg_M + NO_M_FE
+NO_Si_M = Noms['FELEM'][:,7]
+NO_Si = NO_Si_M +  NO_M_FE
+NO_S_M = Noms['FELEM'][:,9]
+NO_S = NO_S_M + NO_M_FE
+NO_Ca_M = Noms['FELEM'][:,11]
+NO_Ca = NO_Ca_M + NO_M_FE
+NO_Ti_M = Noms['FELEM'][:,12]
+NO_Ti = NO_Ti_M + NO_M_FE
+NO_TiII_M = Noms['FELEM'][:,13]
+NO_TiII = NO_TiII_M + NO_M_FE
+NO_Alpha_M = Noms['FPARAM'][:,6]
+
+#Fe Peak (6)
+NO_V_H = Noms['FELEM'][:,14]
+NO_V = NO_V_H - NO_FE_H
+NO_Cr_H = Noms['FELEM'][:,15]
+NO_Cr = NO_Cr_H - NO_FE_H
+NO_Mn_H = Noms['FELEM'][:,16]
+NO_Mn = NO_Mn_H - NO_FE_H
+NO_Co_H = Noms['FELEM'][:,18]
+NO_Co = NO_Co_H - NO_FE_H
+NO_Ni_H = Noms['FELEM'][:,19]
+NO_Ni = NO_Ni_H - NO_FE_H
+NO_Cu_H = Noms['FELEM'][:,20]
+NO_Cu = NO_Cu_H - NO_FE_H
+
+#Light Elements (7)
+
+NO_C_M = Noms['FELEM'][:,0]
+NO_C = NO_C_M + NO_M_FE
+NO_CI_M = Noms['FELEM'][:,1]
+NO_CI = NO_CI_M + NO_M_FE
+NO_N_M = Noms['FELEM'][:,2]
+NO_N = NO_N_M + NO_M_FE
+NO_Na_H = Noms['FELEM'][:,4]
+NO_Na = NO_Na_H - NO_FE_H
+NO_Al_H = Noms['FELEM'][:,6]
+NO_Al = NO_Al_H - NO_FE_H
+NO_P_M = Noms['FELEM'][:,8]
+NO_P = NO_P_M + NO_M_FE
+NO_K_H = Noms['FELEM'][:,10]
+NO_K = NO_K_H - NO_FE_H
+
+#Heavy Elements
+NO_Ge_H = Noms['FELEM'][:,21]
+NO_Ge = NO_Ge_H - NO_FE_H
+NO_Ce_H = Noms['FELEM'][:,22]
+NO_Ce = NO_Ce_H - NO_FE_H
+NO_Rb_H = Noms['FELEM'][:,23]
+NO_Rb = NO_Rb_H - NO_FE_H
+NO_Y_H = Noms['FELEM'][:,24]
+NO_Y = NO_Y_H - NO_FE_H
+NO_Nd_H = Noms['FELEM'][:,25]
+NO_Nd = NO_Nd_H - NO_FE_H
+
+
+fig, ax = plt.subplots(3,3)
+fig.tight_layout()
+ax[0,0].scatter(E_FE_H, E_C_M , s=20, color='b', marker = 's', alpha=0.5, label='Evan Member')
+ax[0,0].scatter(FE_H, C_M , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[0,0].scatter(NO_FE_H, NO_C_M , s=20, color='r', marker = '^',  alpha=0.5, label='Nominated Member')
+ax[0,0].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (uncalibrated)', ylabel='[C/M] (uncalibrated)')
+ax[0,1].scatter(E_FE_H, E_CI_M , s=20, color='b', marker = 's', alpha=0.5, label='Evan Member')
+ax[0,1].scatter(FE_H, CI_M , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[0,1].scatter(NO_FE_H, NO_CI_M , s=20, color='r', marker = '^', alpha=0.5, label='Nominated Member')
+ax[0,1].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (uncalibrated)', ylabel='[CI/Fe] (uncalibrated)')
+ax[0,2].scatter(E_FE_H, E_N_M , s=20, color='b', marker = 's',  alpha=0.5, label='Evan Member')
+ax[0,2].scatter(FE_H, N_M , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[0,2].scatter(NO_FE_H, NO_N_M , s=20, color='r', marker = '^',  alpha=0.5, label='Nominated Member')
+ax[0,2].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (uncalibrated)', ylabel='[N/M] (uncalibrated)')
+ax[1,0].scatter(E_FE_H, E_Na_H , s=20, color='b',  marker = 's', alpha=0.5, label='Evan Member')
+ax[1,0].scatter(FE_H, Na_H , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[1,0].scatter(NO_FE_H, NO_Na_H , s=20, color='r', marker = '^',  alpha=0.5, label='Nominated Member')
+ax[1,0].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (uncalibrated)', ylabel='[Na/H] (uncalibrated)')
+ax[1,1].scatter(E_FE_H, E_Al_H , s=20, color='b',  marker = 's', alpha=0.5, label='Evan Member')
+ax[1,1].scatter(FE_H, Al_H , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[1,1].scatter(NO_FE_H, NO_Al_H , s=20, color='r', marker = '^',  alpha=0.5, label='Nominated Member')
+ax[1,1].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (uncalibrated)', ylabel='[Al/H] (uncalibrated)')
+ax[1,2].scatter(E_FE_H, E_P_M , s=20, color='b', marker = 's',  alpha=0.5, label='Evan Member')
+ax[1,2].scatter(FE_H, P_M , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[1,2].scatter(NO_FE_H, NO_P_M , s=20, color='r', marker = '^',  alpha=0.5, label='Nominated Member')
+ax[1,2].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (uncalibrated)', ylabel='[P/Fe] (uncalibrated)')
+ax[2,0].scatter(E_FE_H, E_K , s=20, color='b', marker = 's',  alpha=0.5, label='Evan Member')
+ax[2,0].scatter(FE_H, K , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[2,0].scatter(NO_FE_H, NO_K , s=20, color='r', marker = '^',  alpha=0.5, label='Nominated Member')
+ax[2,0].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (uncalibrated)', ylabel='[K/Fe] (uncalibrated)')
+plt.legend(loc='upper right')
+plt.savefig('Uncal Light Elements.pdf')
+
+
+fig, ax = plt.subplots(3,3)
+fig.tight_layout()
+ax[0,0].scatter(E_FE_H, E_O , s=20, color='b', marker = 's', alpha=0.5, label='Evan Member')
+ax[0,0].scatter(FE_H, O , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[0,0].scatter(NO_FE_H, NO_O , s=20, color='r', marker = '^',  alpha=0.5, label='Nominated Member')
+ax[0,0].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (uncalibrated)', ylabel='[O/Fe] (calibrated)')
+ax[0,1].scatter(E_FE_H, E_Mg , s=20, color='b', marker = 's', alpha=0.5, label='Evan Member')
+ax[0,1].scatter(FE_H, Mg , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[0,1].scatter(NO_FE_H, NO_Mg , s=20, color='r', marker = '^', alpha=0.5, label='Nominated Member')
+ax[0,1].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (uncalibrated)', ylabel='[Mg/Fe] (calibrated)')
+ax[0,2].scatter(E_FE_H, E_Si , s=20, color='b', marker = 's',  alpha=0.5, label='Evan Member')
+ax[0,2].scatter(FE_H, Si , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[0,2].scatter(NO_FE_H, NO_Si , s=20, color='r', marker = '^',  alpha=0.5, label='Nominated Member')
+ax[0,2].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (uncalibrated)', ylabel='[Si/Fe] (calibrated)')
+ax[1,0].scatter(E_FE_H, E_S , s=20, color='b',  marker = 's', alpha=0.5, label='Evan Member')
+ax[1,0].scatter(FE_H, S , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[1,0].scatter(NO_FE_H, NO_S , s=20, color='r', marker = '^',  alpha=0.5, label='Nominated Member')
+ax[1,0].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (uncalibrated)', ylabel='[S/Fe] (calibrated)')
+ax[1,1].scatter(E_FE_H, E_Ca , s=20, color='b',  marker = 's', alpha=0.5, label='Evan Member')
+ax[1,1].scatter(FE_H, Ca , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[1,1].scatter(NO_FE_H, NO_Ca , s=20, color='r', marker = '^',  alpha=0.5, label='Nominated Member')
+ax[1,1].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (uncalibrated)', ylabel='[Ca/Fe] (calibrated)')
+ax[1,2].scatter(E_FE_H, E_Ti , s=20, color='b', marker = 's',  alpha=0.5, label='Evan Member')
+ax[1,2].scatter(FE_H, Ti , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[1,2].scatter(NO_FE_H, NO_Ti , s=20, color='r', marker = '^',  alpha=0.5, label='Nominated Member')
+ax[1,2].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (uncalibrated)', ylabel='[Ti/Fe] (calibrated)')
+ax[2,0].scatter(E_FE_H, E_TiII , s=20, color='b', marker = 's',  alpha=0.5, label='Evan Member')
+ax[2,0].scatter(FE_H, TiII , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[2,0].scatter(NO_FE_H, NO_TiII , s=20, color='r', marker = '^',  alpha=0.5, label='Nominated Member')
+ax[2,0].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (uncalibrated)', ylabel='[TiII/Fe] (calibrated)')
+ax[2,2].scatter(E_FE_H, E_Alpha_M , s=20, color='b', marker = 's',  alpha=0.5, label='Evan Member')
+ax[2,2].scatter(FE_H, Alpha_M , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[2,2].scatter(NO_FE_H, NO_Alpha_M , s=20, color='r', marker = '^',  alpha=0.5, label='Nominated Member')
+ax[2,2].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (uncalibrated)', ylabel='[Alpha/M] (calibrated)')
+plt.savefig('Uncal Alpha Elements.pdf')
+
+
+fig, ax = plt.subplots(2,3)
+fig.tight_layout()
+ax[0,0].scatter(E_FE_H, E_V , s=20, color='b', marker = 's', alpha=0.5, label='Evan Member')
+ax[0,0].scatter(FE_H, V , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[0,0].scatter(NO_FE_H, NO_V , s=20, color='r', marker = '^',  alpha=0.5, label='Nominated Member')
+ax[0,0].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (uncalibrated)', ylabel='[V/Fe] (calibrated)')
+ax[0,1].scatter(E_FE_H, E_Cr , s=20, color='b', marker = 's', alpha=0.5, label='Evan Member')
+ax[0,1].scatter(FE_H, Cr , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[0,1].scatter(NO_FE_H, NO_Cr , s=20, color='r', marker = '^', alpha=0.5, label='Nominated Member')
+ax[0,1].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (uncalibrated)', ylabel='[Cr/Fe] (calibrated)')
+ax[0,2].scatter(E_FE_H, E_Mn , s=20, color='b', marker = 's',  alpha=0.5, label='Evan Member')
+ax[0,2].scatter(FE_H, Mn , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[0,2].scatter(NO_FE_H, NO_Mn , s=20, color='r', marker = '^',  alpha=0.5, label='Nominated Member')
+ax[0,2].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (uncalibrated)', ylabel='[Mn/Fe] (calibrated)')
+ax[1,0].scatter(E_FE_H, E_Co , s=20, color='b',  marker = 's', alpha=0.5, label='Evan Member')
+ax[1,0].scatter(FE_H, Co , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[1,0].scatter(NO_FE_H, NO_Co , s=20, color='r', marker = '^',  alpha=0.5, label='Nominated Member')
+ax[1,0].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (uncalibrated)', ylabel='[Co/Fe] (calibrated)')
+ax[1,1].scatter(E_FE_H, E_Ni , s=20, color='b',  marker = 's', alpha=0.5, label='Evan Member')
+ax[1,1].scatter(FE_H, Ni , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[1,1].scatter(NO_FE_H, NO_Ni , s=20, color='r', marker = '^',  alpha=0.5, label='Nominated Member')
+ax[1,1].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (uncalibrated)', ylabel='[Ni/Fe] (calibrated)')
+ax[1,2].scatter(E_FE_H, E_Cu , s=20, color='b', marker = 's',  alpha=0.5, label='Evan Member')
+ax[1,2].scatter(FE_H, Cu , s=20, color='y', marker='*', alpha=0.5, label='Confirmed Member')
+ax[1,2].scatter(NO_FE_H, NO_Cu , s=20, color='r', marker = '^',  alpha=0.5, label='Nominated Member')
+ax[1,2].set(xlim=(-2.75, 0), ylim=(-1, 1), xlabel='[Fe/H] (uncalibrated)', ylabel='[Cu/Fe] (calibrated)')
+plt.savefig('Uncal Fe Peak Elements.pdf')
+
+
+
+#histograms for H magnitude and SNREV
+#combine all stars into one table (unlike scatter plots, here, there are no duplicate members)
+histo = vstack([EVN_only, Noms, DRM])
+HPlot = histo['H']
+SNREVPlot = histo['SNREV']
+
+#create bin spacing for the two histograms
+bins1 = [13,13.5,14,14.5,15,15.5,16]
+bins2 = [0,25,50,75,100]
+
+fig, ax = plt.subplots(1,2)
+fig.tight_layout()
+ax[0].hist(HPlot, bins, facecolor = 'green', edgecolor = 'black')
+ax[1].hist(SNREVPlot, bins2, facecolor='blue', edgecolor = 'black')
+
+
+plt.savefig('Histo.pdf')
